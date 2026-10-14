@@ -23,6 +23,21 @@ export async function play(profile: Profile) {
   }
 }
 
+/** Spiel beenden und sofort neu starten – z. B. nachdem Mods geändert wurden. */
+export async function restart(profile: Profile) {
+  const exited = new Promise<void>((resolve) => {
+    const off = on("running", () => {
+      if (!store.running.has(profile.id)) {
+        off();
+        resolve();
+      }
+    });
+  });
+  await api.kill(profile.id);
+  await exited;
+  await play(profile);
+}
+
 export function renderHome(root: HTMLElement, navigate: Navigate) {
   const hero = h("section", { class: "hero" });
   const recent = h("section", { class: "recent" });
@@ -49,7 +64,10 @@ export function renderHome(root: HTMLElement, navigate: Navigate) {
     const pct = prog && prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : null;
 
     const playBtn = running
-      ? h("button", { class: "btn danger big", onclick: () => attempt(() => api.kill(p.id)) }, "Beenden")
+      ? h("div", { class: "hero-links" },
+          h("button", { class: "btn danger big", onclick: () => attempt(() => api.kill(p.id)) }, "Beenden"),
+          h("button", { class: "btn ghost", title: "Übernimmt geänderte Mods", onclick: () => restart(p) }, "↻ Neu starten"),
+        )
       : h("button", { class: "btn primary big play", disabled: !!store.launching, onclick: () => play(p) }, launching ? "Startet …" : "Spielen");
 
     clear(

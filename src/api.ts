@@ -115,6 +115,25 @@ export interface ProgressEvent {
   total: number;
 }
 
+export interface WorldEntry {
+  id: string;
+  name: string;
+  source: "singleplayer" | "server";
+  profile: string | null;
+  path: string;
+  version: string | null;
+  last_played: number | null;
+  game_mode: string | null;
+  spawn: [number, number, number] | null;
+  available: boolean;
+}
+
+export interface ClaudeStatus {
+  installed: boolean;
+  config_path: string | null;
+  snippet: string;
+}
+
 export const api = {
   getSettings: () => invoke<Settings>("get_settings"),
   saveSettings: (settings: Settings) => invoke<void>("save_settings", { settings }),
@@ -161,6 +180,14 @@ export const api = {
   installPresets: (profileId: string, presets: string[]) =>
     invoke<PresetReport>("install_presets", { profileId, presets }),
   updateContent: (profileId: string) => invoke<PresetReport>("update_content", { profileId }),
+
+  listWorlds: () => invoke<WorldEntry[]>("list_worlds"),
+  addServerWorld: (name: string, path: string) => invoke<void>("add_server_world", { name, path }),
+  removeServerWorld: (id: string) => invoke<void>("remove_server_world", { id }),
+  openWorldFolder: (id: string) => invoke<void>("open_world_folder", { id }),
+  worldPreview: (id: string) => invoke<string>("world_preview", { id }),
+  claudeStatus: () => invoke<ClaudeStatus>("claude_status"),
+  claudeInstall: () => invoke<string>("claude_install"),
 };
 
 export const events = {

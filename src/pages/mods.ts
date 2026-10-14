@@ -1,6 +1,7 @@
 import { api, LOADER_LABELS, type ContentItem, type ContentKind, type Profile } from "../api";
 import { emit, on, selectedProfile, store } from "../store";
 import { attempt, clear, confirmDialog, errorText, formatNumber, h, toast, toggle } from "../ui";
+import { restart } from "./home";
 import type { Navigate } from "../main";
 
 const KINDS: { kind: ContentKind; label: string; folder: string }[] = [
@@ -23,6 +24,19 @@ export function renderMods(root: HTMLElement, navigate: Navigate) {
 
   const head = h("div", { class: "page-head" });
   const tabs = h("div", { class: "tabs" });
+  const banner = h("div", {});
+  const renderBanner = () => {
+    const p = profile();
+    clear(
+      banner,
+      p && store.running.has(p.id)
+        ? h("div", { class: "banner" },
+            h("span", {}, "Das Spiel läuft. Mods an/aus wirkt nach einem Neustart. Mod-Einstellungen änderst du direkt im Spiel unter „Mods“ (Mod Menu)."),
+            h("button", { class: "btn primary small", onclick: () => { navigate("home"); restart(p); } }, "↻ Jetzt neu starten"),
+          )
+        : null,
+    );
+  };
   const installedList = h("div", { class: "item-list" });
   const searchInput = h("input", { type: "search", placeholder: "Modrinth durchsuchen …" }) as HTMLInputElement;
   const results = h("div", { class: "item-list" });
@@ -196,13 +210,14 @@ export function renderMods(root: HTMLElement, navigate: Navigate) {
       clear(root, h("div", { class: "page-head" }, h("h1", {}, "Mods")), h("p", { class: "empty" }, "Lege zuerst ein Profil an."), h("button", { class: "btn primary", onclick: () => navigate("profiles", { create: true }) }, "Profil erstellen"));
       return;
     }
-    if (!root.contains(body)) clear(root, head, tabs, body);
+    if (!root.contains(body)) clear(root, head, banner, tabs, body);
+    renderBanner();
     renderHead();
     renderTabs();
     loadInstalled().then(search);
   };
   refreshAll();
 
-  const offs = [on("profiles", refreshAll)];
+  const offs = [on("profiles", refreshAll), on("running", renderBanner)];
   return () => offs.forEach((f) => f());
 }

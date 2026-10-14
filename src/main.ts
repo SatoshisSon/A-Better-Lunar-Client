@@ -5,14 +5,16 @@ import { renderProfiles } from "./pages/profiles";
 import { renderMods } from "./pages/mods";
 import { renderAccounts } from "./pages/accounts";
 import { renderSettings } from "./pages/settings";
+import { renderWorlds } from "./pages/worlds";
 
-export type Page = "home" | "profiles" | "mods" | "accounts" | "settings";
+export type Page = "home" | "profiles" | "mods" | "worlds" | "accounts" | "settings";
 export type Navigate = (page: Page, params?: Record<string, unknown>) => void;
 
 const NAV: { page: Page; label: string; icon: string }[] = [
   { page: "home", label: "Spielen", icon: "▶" },
   { page: "profiles", label: "Profile", icon: "▦" },
   { page: "mods", label: "Mods", icon: "✦" },
+  { page: "worlds", label: "Welten & Claude", icon: "◈" },
   { page: "accounts", label: "Accounts", icon: "◉" },
   { page: "settings", label: "Einstellungen", icon: "⚙" },
 ];
@@ -39,6 +41,10 @@ const navigate: Navigate = (page, params = {}) => {
       break;
     case "mods":
       dispose = renderMods(content, navigate);
+      break;
+    case "worlds":
+      renderWorlds(content);
+      dispose = undefined;
       break;
     case "accounts":
       dispose = renderAccounts(content);

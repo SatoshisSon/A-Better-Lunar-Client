@@ -7,6 +7,15 @@ pub struct Paths {
     pub root: PathBuf,
 }
 
+/// Bundle-ID aus tauri.conf.json – bestimmt den Datenordner.
+pub const APP_ID: &str = "io.github.satoshisson.ablc";
+
+/// Datenordner (Windows: %APPDATA%\<id>, macOS: ~/Library/Application Support/<id>).
+/// Wird auch vom MCP-Server benutzt, der ohne Tauri läuft.
+pub fn default_root() -> PathBuf {
+    dirs::data_dir().unwrap_or_else(|| PathBuf::from(".")).join(APP_ID)
+}
+
 impl Paths {
     pub fn new(root: PathBuf) -> Self {
         Self { root }

@@ -22,9 +22,11 @@ Ein schneller, schlanker Minecraft-Java-Launcher als Alternative zu Lunar Client
 - **Vorinstallierte Mods (Presets)**, die beim Anlegen eines Profils automatisch passend zur Version installiert werden:
   - *Performance*: Sodium, Lithium, FerriteCore, EntityCulling, ImmediatelyFast, ModernFix, Dynamic FPS
   - *Shader & Optik*: Iris, Sodium Extra, Reese's Sodium Options, Zoomify, LambDynamicLights, Continuity
-  - *Komfort*: Mod Menu, Mouse Tweaks
+  - *Komfort*: Mouse Tweaks
+  - **Mod Menu ist bei jedem Fabric-Profil dabei**: Im Spiel unter „Mods“ lassen sich die Einstellungen aller Mods ändern, ohne das Spiel zu verlassen.
   - Benötigte Abhängigkeiten (z. B. Fabric API) kommen automatisch dazu.
-- **Mod-Manager**: Mods, Shader und Ressourcenpakete von Modrinth suchen, installieren, an/aus schalten, entfernen und mit einem Klick aktualisieren. Wechselst du die Version eines Profils, werden die Mods automatisch angepasst.
+- **Mod-Manager**: Mods, Shader und Ressourcenpakete von Modrinth suchen, installieren, an/aus schalten, entfernen und mit einem Klick aktualisieren. Wechselst du die Version eines Profils, werden die Mods automatisch angepasst. Läuft das Spiel, übernimmt **„Neu starten“** geänderte Mods mit einem Klick (Minecraft kann Mods nicht im laufenden Spiel laden).
+- **Welten & Claude**: Einzelspieler-Welten aller Profile und Welt-Ordner deines eigenen Servers werden ausgelesen und per MCP an die Claude-Desktop-App angebunden. Claude sieht dann Gelände, Höhen, Biome, vorhandene Bauten und deine Position und kann dir passende Bauideen mit Koordinaten und Materiallisten vorschlagen (siehe unten).
 - **Profile**: getrennte Instanzen mit eigenen Mods, Welten und Einstellungen.
 - **Accounts**: Microsoft-Login (auch mehrere Accounts) plus Offline-Accounts.
 - **Java automatisch**: Für jede Minecraft-Version wird die richtige Java-Version (8, 17, 21 …) direkt von Mojang geladen.
@@ -63,6 +65,28 @@ Offline-Accounts lassen sich (wie bei Prism Launcher) erst anlegen, nachdem ein 
 2. Unter *Rich Presence → Art Assets* das Logo (`assets/logo.svg` als PNG) mit dem Namen `logo` hochladen.
 3. Die **Application ID** in den Einstellungen eintragen (oder als Secret `ABLC_DISCORD_APP_ID`) und den Discord-Status einschalten.
 
+## Welten mit Claude verbinden
+
+1. Unter **Welten & Claude** auf **Claude-App automatisch einrichten** klicken und die [Claude-Desktop-App](https://claude.ai/download) neu starten.
+   (Manuell: In der Claude-App *Einstellungen → Entwickler → Konfiguration bearbeiten* und den angezeigten Block eintragen.)
+2. Einzelspieler-Welten werden automatisch gefunden. Für deinen Server: **+ Server-Welt** und den Welt-Ordner wählen (meist `world`, mit `level.dat` und `region`). Läuft der Server nicht auf deinem PC, den Ordner vorher herunterladen (z. B. per FTP); vorher im Server `/save-all` ausführen.
+3. In Claude fragen, z. B.:
+   - „Schau dir meine Welt *Meine Insel* an und schlag mir ein Haus am Wasser in der Nähe meiner Position vor.“
+   - „Was für eine Burg würde auf den Hügel bei x=200, z=-150 passen? Mit Materialliste.“
+   - „Sieh dir mein Haus bei x=40 z=30 an. Wie könnte ich es erweitern?“
+
+Claude bekommt dafür diese Werkzeuge (nur lesend, es wird nichts verändert):
+
+| Werkzeug | Inhalt |
+|---|---|
+| `list_worlds` | alle Welten mit Version, Spielmodus, Spawn |
+| `world_info` | Spawn, Tageszeit, erkundete Bereiche, Spielerpositionen |
+| `area_overview` | Gelände bis 512×512: Bodenhöhen, Wasser, Biome, Bauwerke, Material- und Höhenkarte |
+| `get_blocks` | exakter Block-Ausschnitt (bis 48×48×48), Schicht für Schicht |
+| `find_blocks` | Blöcke nach Namen suchen (z. B. Truhen, Betten) |
+
+Unterstützt werden Welten ab Minecraft 1.13, inklusive Paper/Spigot-Servern (`world_nether`, `world_the_end`). Gelesen wird der zuletzt gespeicherte Stand.
+
 ## Selbst bauen
 
 Voraussetzungen: [Rust](https://rustup.rs), [Node.js 20+](https://nodejs.org) und die [Tauri-Voraussetzungen](https://v2.tauri.app/start/prerequisites/) für dein System.
@@ -84,6 +108,8 @@ src-tauri/src/
     loader.rs           Fabric / Legacy Fabric
   auth.rs               Microsoft-Login (Device Code → Xbox → Minecraft)
   mods.rs               Modrinth: Presets, Suche, Installation, Updates
+  world/                Welten lesen: NBT, Anvil-Regionen, Gelände-Analyse
+  mcp.rs                MCP-Server für die Claude-Desktop-App (`--mcp`)
   profiles.rs           Profile / Instanzen
   discord.rs            Discord-Status
 ```

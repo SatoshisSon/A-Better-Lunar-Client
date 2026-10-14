@@ -2,5 +2,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    ablc_lib::run()
+    // `--mcp`: als MCP-Server für die Claude-Desktop-App laufen (ohne Fenster).
+    if std::env::args().any(|a| a == "--mcp") {
+        ablc_lib::run_mcp();
+    } else {
+        ablc_lib::run();
+    }
 }

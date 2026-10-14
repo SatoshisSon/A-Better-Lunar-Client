@@ -89,8 +89,8 @@ pub const PRESETS: &[Preset] = &[
     Preset {
         id: "comfort",
         name: "Komfort",
-        description: "Mod-Menü im Spiel und bessere Inventar-Bedienung.",
-        projects: &["modmenu", "mouse-tweaks"],
+        description: "Bessere Inventar-Bedienung. (Mod Menu für Einstellungen im Spiel ist immer dabei.)",
+        projects: &["mouse-tweaks"],
     },
 ];
 
@@ -486,11 +486,15 @@ pub async fn install_presets(
     if profile.loader == Loader::Vanilla {
         return Err(Error::msg("Mod-Presets brauchen einen Mod-Loader (Fabric)."));
     }
-    let slugs: Vec<&str> = PRESETS
+    let mut slugs: Vec<&str> = PRESETS
         .iter()
         .filter(|p| preset_ids.iter().any(|id| id == p.id))
         .flat_map(|p| p.projects.iter().copied())
         .collect();
+    // Mod Menu immer dabei: Darüber lassen sich alle Mod-Einstellungen im Spiel ändern.
+    if profile.loader == Loader::Fabric && !slugs.contains(&"modmenu") {
+        slugs.insert(0, "modmenu");
+    }
     let mut report = PresetReport::default();
     for (i, slug) in slugs.iter().enumerate() {
         progress.update(&format!("Mods werden installiert: {slug}"), i, slugs.len());

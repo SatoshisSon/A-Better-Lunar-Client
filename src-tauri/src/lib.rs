@@ -2,6 +2,7 @@ mod accounts;
 mod auth;
 mod discord;
 mod error;
+mod mcp;
 mod minecraft;
 mod mods;
 mod net;
@@ -9,6 +10,7 @@ mod paths;
 mod profiles;
 mod progress;
 mod settings;
+mod world;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -529,12 +531,97 @@ async fn update_content(app: AppHandle, state: State<'_, AppState>, profile_id: 
 }
 
 // ---------------------------------------------------------------------------
+// Welten & Claude
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+async fn list_worlds(state: State<'_, AppState>) -> Result<Vec<world::WorldEntry>> {
+    let paths = state.paths.clone();
+    tokio::task::spawn_blocking(move || world::list_all(&paths)).await.map_err(|e| Error::msg(e.to_string()))
+}
+
+#[tauri::command]
+fn add_server_world(state: State<'_, AppState>, name: String, path: String) -> Result<world::ServerWorld> {
+    world::add_server(&state.paths, &name, &path)
+}
+
+#[tauri::command]
+fn remove_server_world(state: State<'_, AppState>, id: String) -> Result<()> {
+    world::remove_server(&state.paths, &id)
+}
+
+#[tauri::command]
+fn open_world_folder(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<()> {
+    let w = world::find(&state.paths, &id)?;
+    app.opener().open_path(w.path, None::<&str>).map_err(|e| Error::msg(e.to_string()))
+}
+
+/// Vorschau, wie Claude die Welt sieht (Geländeübersicht um den Spawn bzw. Spieler).
+#[tauri::command]
+async fn world_preview(state: State<'_, AppState>, id: String) -> Result<String> {
+    let paths = state.paths.clone();
+    tokio::task::spawn_blocking(move || -> Result<String> {
+        let w = world::find(&paths, &id)?;
+        let path = std::path::Path::new(&w.path);
+        let level = world::read_level(path);
+        let center = world::players(path, level.as_ref())
+            .into_iter()
+            .find(|p| p.dimension == "overworld")
+            .map(|p| (p.pos[0] as i32, p.pos[2] as i32))
+            .or_else(|| level.as_ref().and_then(|l| l.spawn).map(|s| (s[0] as i32, s[2] as i32)))
+            .unwrap_or((0, 0));
+        let info = world::analysis::world_info(&w)?;
+        let area = world::analysis::area_summary(
+            path,
+            world::anvil::Dimension::Overworld,
+            center.0 - 48,
+            center.1 - 48,
+            center.0 + 47,
+            center.1 + 47,
+        )?;
+        Ok(format!("{info}\n{area}"))
+    })
+    .await
+    .map_err(|e| Error::msg(e.to_string()))?
+}
+
+#[derive(Serialize)]
+struct ClaudeStatus {
+    installed: bool,
+    config_path: Option<String>,
+    snippet: String,
+}
+
+#[tauri::command]
+fn claude_status() -> Result<ClaudeStatus> {
+    let snippet = serde_json::to_string_pretty(&serde_json::json!({
+        "mcpServers": { mcp::CONFIG_KEY: mcp::server_entry()? }
+    }))?;
+    Ok(ClaudeStatus {
+        installed: mcp::is_installed_in_claude(),
+        config_path: mcp::claude_config_path().map(|p| p.to_string_lossy().into_owned()),
+        snippet,
+    })
+}
+
+#[tauri::command]
+fn claude_install() -> Result<String> {
+    Ok(mcp::install_into_claude()?.to_string_lossy().into_owned())
+}
+
+// ---------------------------------------------------------------------------
+
+pub fn run_mcp() {
+    mcp::run();
+}
 
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            let root = app.path().app_data_dir()?;
+            // Gleicher Ordner wie Tauris app_data_dir; auch der MCP-Server nutzt ihn.
+            let root = paths::default_root();
             std::fs::create_dir_all(&root)?;
             app.manage(AppState {
                 paths: Paths::new(root),
@@ -576,6 +663,13 @@ pub fn run() {
             remove_content,
             install_presets,
             update_content,
+            list_worlds,
+            add_server_world,
+            remove_server_world,
+            open_world_folder,
+            world_preview,
+            claude_status,
+            claude_install,
         ])
         .run(tauri::generate_context!())
         .expect("Fehler beim Starten von A Better Lunar Client");
