@@ -2,6 +2,35 @@ import { api } from "../api";
 import { on, refreshAccounts, store } from "../store";
 import { attempt, clear, confirmDialog, errorText, h, modal, toast } from "../ui";
 
+const SETUP_URL = "https://github.com/SatoshisSon/A-Better-Lunar-Client#microsoft-login-einrichten-einmalig";
+
+/** Hinweis beim ersten Start, solange keine Azure-Client-ID eingetragen ist. */
+function setupBanner(onSaved: () => void) {
+  if (store.settings?.ms_client_id) return null;
+  const input = h("input", { type: "text", placeholder: "Azure-Client-ID einfügen, z. B. 1a2b3c4d-…" }) as HTMLInputElement;
+  const save = h("button", { class: "btn primary small" }, "Speichern");
+  save.onclick = async () => {
+    const id = input.value.trim();
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+      toast("Das sieht nicht wie eine Client-ID aus (Format 8-4-4-4-12 Zeichen).", "error");
+      return;
+    }
+    const settings = { ...store.settings!, ms_client_id: id };
+    if ((await attempt(() => api.saveSettings(settings))) !== undefined) {
+      store.settings = settings;
+      toast("Gespeichert. Du kannst dich jetzt mit Microsoft anmelden.", "success");
+      onSaved();
+    }
+  };
+  return h("section", { class: "panel setup" },
+    h("h3", {}, "Einmalige Einrichtung"),
+    h("p", {},
+      "Microsoft verlangt für jeden Launcher eine eigene, kostenlose App-ID. Die Einrichtung dauert ca. 5 Minuten, danach musst du noch auf die Freischaltung durch Mojang warten (meist ein paar Tage)."),
+    h("button", { class: "btn ghost small", onclick: () => attempt(() => api.openUrl(SETUP_URL)) }, "Schritt-für-Schritt-Anleitung öffnen"),
+    h("div", { class: "row setup-row" }, input, save),
+  );
+}
+
 async function microsoftLogin() {
   const code = await attempt(() => api.msLoginStart());
   if (!code) return;
@@ -78,6 +107,7 @@ export function renderAccounts(root: HTMLElement) {
   function render() {
     clear(
       list,
+      setupBanner(render),
       store.accounts.length === 0 ? h("p", { class: "empty" }, "Noch kein Account. Melde dich mit Microsoft an, um zu spielen.") : null,
       store.accounts.map((a) =>
         h("div", { class: "card account-card" + (a.active ? " active" : "") },

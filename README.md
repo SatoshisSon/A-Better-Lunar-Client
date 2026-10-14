@@ -37,13 +37,20 @@ Ein schneller, schlanker Minecraft-Java-Launcher als Alternative zu Lunar Client
 
 ## Installation
 
-Fertige Installer (Windows `.exe`, macOS `.dmg`) erzeugt GitHub Actions automatisch:
+**[⬇ Neueste Version herunterladen](https://github.com/SatoshisSon/A-Better-Lunar-Client/releases/latest)**
 
-- Unter **Actions → Build** beim letzten Lauf unter *Artifacts*, oder
-- als Release, sobald ein Tag wie `v0.1.0` gepusht wird (`git tag v0.1.0 && git push --tags`).
+| System | Datei |
+|---|---|
+| Windows 10/11 | `A.Better.Lunar.Client_…_x64-setup.exe` → ausführen |
+| macOS (Intel & Apple Silicon) | `A.Better.Lunar.Client_…_universal.dmg` → öffnen, App in „Programme“ ziehen |
 
-> macOS: Die App ist nicht von Apple signiert. Beim ersten Start daher Rechtsklick → *Öffnen*.
-> Windows: SmartScreen ggf. mit *Weitere Informationen → Trotzdem ausführen* bestätigen.
+Beim ersten Start warnt das System, weil die App nicht kostenpflichtig signiert ist:
+- **Windows:** „Weitere Informationen“ → „Trotzdem ausführen“
+- **macOS:** Rechtsklick auf die App → „Öffnen“. Klappt das nicht: Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“.
+
+Danach einmalig den Microsoft-Login einrichten (siehe unten); der Launcher führt dich unter „Accounts“ dorthin. Java, Minecraft und Mods lädt er beim ersten Start selbst herunter.
+
+Neue Versionen erscheinen automatisch unter *Releases*, sobald Änderungen in `main` landen (Version in `src-tauri/tauri.conf.json` und `package.json` erhöhen).
 
 ## Microsoft-Login einrichten (einmalig)
 
@@ -54,7 +61,7 @@ Microsoft verlangt, dass jeder Launcher eine eigene App-ID hat. Das ist kostenlo
 3. In der App unter **Authentifizierung** die Option **Öffentliche Clientflows zulassen** auf **Ja** stellen und speichern.
 4. Die **Anwendungs-ID (Client-ID)** kopieren.
 5. Die ID bei Mojang für die Minecraft-API freischalten lassen: [aka.ms/mce-reviewappid](https://aka.ms/mce-reviewappid). Die Prüfung kann einige Tage dauern.
-6. Die ID im Launcher unter **Einstellungen → Microsoft-Login** eintragen.
+6. Die ID im Launcher unter **Accounts** (oder **Einstellungen → Microsoft-Login**) eintragen.
    Alternativ als GitHub-Secret `ABLC_MS_CLIENT_ID` hinterlegen, dann ist sie in jedem Build schon eingebaut.
 
 Offline-Accounts lassen sich (wie bei Prism Launcher) erst anlegen, nachdem ein Microsoft-Account mit gekauftem Minecraft hinzugefügt wurde.
@@ -67,7 +74,8 @@ Offline-Accounts lassen sich (wie bei Prism Launcher) erst anlegen, nachdem ein 
 
 ## Welten mit Claude verbinden
 
-1. Unter **Welten & Claude** auf **Claude-App automatisch einrichten** klicken und die [Claude-Desktop-App](https://claude.ai/download) neu starten.
+1. macOS: Die App vorher in „Programme“ verschieben (nicht aus dem DMG heraus starten).
+   Unter **Welten & Claude** auf **Claude-App automatisch einrichten** klicken und die [Claude-Desktop-App](https://claude.ai/download) neu starten.
    (Manuell: In der Claude-App *Einstellungen → Entwickler → Konfiguration bearbeiten* und den angezeigten Block eintragen.)
 2. Einzelspieler-Welten werden automatisch gefunden. Für deinen Server: **+ Server-Welt** und den Welt-Ordner wählen (meist `world`, mit `level.dat` und `region`). Läuft der Server nicht auf deinem PC, den Ordner vorher herunterladen (z. B. per FTP); vorher im Server `/save-all` ausführen.
 3. In Claude fragen, z. B.:
